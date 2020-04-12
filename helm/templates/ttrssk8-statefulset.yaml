@@ -1,0 +1,120 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ttrssk8s
+  serviceName: ttrssk8s
+  template:
+    metadata:
+      labels:
+        app: ttrssk8s
+    spec:
+      containers:
+
+      - name: ttrssk8s-postgres
+        image: postgres:9.6-alpine
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.database.username }}
+        - name: POSTGRES_PASSWORD
+          value: {{ .Values.database.password }}
+        - name: POSTGRES_DB
+          value: {{ .Values.database.dbname }}
+        - name: PGDATA
+          value: /pgdata/data
+
+        ports:
+        - containerPort: {{ .Values.database.port }}
+          name: pgsql
+          protocol: TCP
+
+        volumeMounts:
+        - name: ttrssk8s-postgres-pvc
+          mountPath: /pgdata
+        - name: ttrssk8s-sql-init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+
+      - name: ttrssk8s
+        image: reg.mydomain.org/ttrssk8s:latest
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+
+        volumeMounts:
+          - name: ttrssk8s-icons-pvc
+            mountPath: /opt/ttrssk8s/feed-icons
+          - name: config-php
+            mountPath: /var/www/ttrss/config.php
+            subPath: config.php
+          - name: php-fpm-conf
+            mountPath: /etc/php7/php-fpm.conf
+            subPath: php-fpm.conf
+          - name: nginx-conf
+            mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
+
+      imagePullSecrets:
+      - name: mydomain-registry-cred
+
+      volumes:
+
+      - name: config-php
+        configMap:
+          name: ttrssk8s-configmap
+          items:
+          - key: config.php
+            path: config.php
+
+      - name: php-fpm-conf
+        configMap:
+          name: ttrssk8s-configmap
+          items:
+          - key: php-fpm.conf
+            path: php-fpm.conf
+
+      - name: nginx-conf
+        configMap:
+          name: ttrssk8s-configmap
+          items:
+          - key: nginx.conf
+            path: nginx.conf
+
+      - name: ttrssk8s-sql-init-scripts
+        configMap:
+          name: ttrssk8s-configmap
+          items:
+          - key: ttrss-schema-pgsql.sql
+            path: ttrss-schema-pgsql.sql
+
+
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Release.Name }}-postgres-pvc
+      labels:
+        app: ttrssk8s
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.volumeSizes.postgres }}
+      storageClassName: do-block-storage
+
+  - metadata:
+      name: {{ .Release.Name }}-icons-pvc
+      labels:
+        app: ttrssk8s
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.volumeSizes.icons }}
+      storageClassName: do-block-storage
+
