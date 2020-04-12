@@ -1,5 +1,8 @@
 # ttrss-k8s
 
+Build a Tiny Tiny RSS docker container and deploy it in kubernetes
+with helm on digitalocean.
+
 Warning: I'm learning helm, and this is my first attempt to build a
 helm chart.
 
