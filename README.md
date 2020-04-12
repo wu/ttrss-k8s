@@ -25,8 +25,12 @@ Customize the values.yaml and/or yaml files to fit your requirements.
         helm uninstall ttrssk8s
 
 
-I am using digital ocean block storage for persistent volumes.  I'm
-also using an nginx ingress with a digital ocean load balancer.
+I am using digital ocean block storage for persistent volumes.  If you
+use helm to uninstall and then reinstall, it will properly reconnect
+to the persistent volumes.  I'm not sure if 'helm upgrade' works
+properly yet.
+
+I'm also using an nginx ingress with a digital ocean load balancer.
 
   * https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nginx-ingress-with-cert-manager-on-digitalocean-kubernetes
 
